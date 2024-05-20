@@ -1,0 +1,37 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mongodb"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id             String        @id @default(auto()) @map("_id") @db.ObjectId
+    email          String        @unique
+    username       String        @unique
+    gender         String
+    fullName       String
+    password       String
+    profilePicture String
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime      @updatedAt
+    deletedAt      DateTime?
+    transaction    Transaction[]
+}
+
+model Transaction {
+    id          String    @id @default(auto()) @map("_id") @db.ObjectId
+    userId      String    @db.ObjectId
+    amount      Float
+    description String
+    paymentType String
+    location    String
+    category    String
+    date        DateTime
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+    user        User      @relation(fields: [userId], references: [id])
+}
