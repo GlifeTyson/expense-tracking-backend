@@ -27,7 +27,6 @@ export const userResolvers = {
         const filters = buildMongoFilters(filter);
         const ordersBy = buildMongoOrders(orderBy);
 
-        // console.log("filters", filters);
         const obj = await prisma.user.findMany({
           skip: offset,
           take: limit,
@@ -49,6 +48,7 @@ export const userResolvers = {
         where: { id: authorizedUser.id },
         include: {
           transaction: true,
+          role: true,
         },
       });
       return me;
@@ -57,7 +57,7 @@ export const userResolvers = {
   Mutation: {
     createUser: async (parent, { input: args }, context) => {
       try {
-        const { username, email, password, gender, fullName } = args;
+        const { username, email, password, gender, fullName, role } = args;
 
         // Step 1: Validate input
         const validationErrors = validateUserInput(args);
@@ -90,6 +90,13 @@ export const userResolvers = {
             ? `https://avatar.iran.liara.run/public/boy?username=${username}`
             : `https://avatar.iran.liara.run/public/girl?username=${username}`;
 
+        //Step 4.5 Create role for user
+        const roleFound = await prisma.role.findFirst({
+          where: {
+            name: role,
+          },
+        });
+
         // Step 5: Create the new user
         const newUser = await prisma.user.create({
           data: {
@@ -99,6 +106,7 @@ export const userResolvers = {
             gender,
             fullName,
             profilePicture,
+            roleId: roleFound.id,
           },
         });
 
@@ -188,19 +196,32 @@ export const userResolvers = {
         throw new Error(error);
       }
     },
-    deleteUser: async (_, { id }) => {
+    deleteUser: async (_, { id }, context) => {
       try {
+        //check role if role admin then oke to delete
+        const { authorizedUser } = context;
+
+        const adminFound = await prisma.user.findFirst({
+          where: {
+            id: authorizedUser.id,
+          },
+          include: {
+            role: true,
+          },
+        });
+        if (adminFound.role.name !== "superadmin") {
+          throw new Error("Unauthorized");
+        }
+        // check if id is exist
         const userFound = await prisma.user.findUnique({
           where: {
             id: String(id),
           },
         });
-
         if (!userFound) {
           throw new Error("User not found");
         }
-
-        const user = await prisma.user.update({
+        await prisma.user.update({
           where: {
             id: String(id),
           },
@@ -210,9 +231,11 @@ export const userResolvers = {
         });
         return {
           success: true,
-          message: "User deleted successfully",
+          message: "User Deleted Successfully",
         };
-      } catch (error) {}
+      } catch (error) {
+        throw new Error(error);
+      }
     },
   },
 };

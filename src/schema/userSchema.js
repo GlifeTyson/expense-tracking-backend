@@ -13,6 +13,8 @@ export const userTypeDefs = gql`
     createdAt: DateTime!
     updatedAt: DateTime!
     transaction: [Transaction!]
+    roleId: ID!
+    role: Role
   }
   enum Gender {
     male
@@ -36,6 +38,11 @@ export const userTypeDefs = gql`
     password: String!
     gender: Gender!
     profilePicture: String
+    role: RoleType
+  }
+  enum RoleType {
+    user
+    superadmin
   }
   input UpdateUserInput {
     email: String

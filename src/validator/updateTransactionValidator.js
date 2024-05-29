@@ -6,7 +6,7 @@ const transactionSchema = Joi.object({
   category: Joi.string().valid("expense", "investment", "saving").optional(),
   paymentType: Joi.string().valid("card", "cash").optional(),
   date: Joi.date().iso().optional(),
-  location: Joi.string().optional(),
+  location: Joi.string().optional().allow(""),
 });
 
 export function validateUpdateTransactionInput(args) {

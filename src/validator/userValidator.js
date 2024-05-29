@@ -34,6 +34,9 @@ export function validateUserInput(args) {
       presence: false, // Optional field
       url: true,
     },
+    roleId: {
+      presence: true,
+    },
   };
 
   // Thực hiện validation sử dụng validate.js

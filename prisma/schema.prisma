@@ -19,6 +19,8 @@ model User {
     updatedAt      DateTime      @updatedAt
     deletedAt      DateTime?
     transaction    Transaction[]
+    roleId         String?       @db.ObjectId
+    role           Role?         @relation(fields: [roleId], references: [id])
 }
 
 model Transaction {
@@ -34,4 +36,14 @@ model Transaction {
     updatedAt   DateTime  @updatedAt
     deletedAt   DateTime?
     user        User      @relation(fields: [userId], references: [id])
+}
+
+model Role {
+    id          String    @id @default(auto()) @map("_id") @db.ObjectId
+    name        String    @unique
+    description String
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+    users       User[]
 }

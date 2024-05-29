@@ -56,17 +56,20 @@ export const transactionResolvers = {
         throw new Error(error);
       }
     },
-    myTransactions: async (_, __, context) => {
+    myTransactions: async (_, args, context) => {
       try {
         const { authorizedUser } = context;
 
         if (!authorizedUser) {
           throw new Error("Unauthorized");
         }
+        const { filter = {}, skip, first, orderBy } = args;
+        const filters = buildMongoFilters(filter);
         return await prisma.transaction.findMany({
-          where: {
-            userId: authorizedUser.id,
-          },
+          where: filters,
+          skip: skip || 0,
+          take: first || 10,
+          orderBy: buildMongoOrders(orderBy),
           include: {
             user: true,
           },
@@ -82,7 +85,7 @@ export const transactionResolvers = {
           throw new Error("Unauthorized");
         }
         const transactions = await prisma.transaction.findMany({
-          where: { userId: authorizedUser.id },
+          where: { userId: authorizedUser.id, deletedAt: { isSet: false } },
         });
         const categoryMap = {};
 
@@ -131,9 +134,11 @@ export const transactionResolvers = {
     updateTransaction: async (_, { id, input: args }, context) => {
       try {
         const { authorizedUser } = context;
+        console.log("authorizedUser", authorizedUser);
         if (!authorizedUser) {
           throw new Error("Unauthorized");
         }
+
         const validateError = validateUpdateTransactionInput(args);
         if (validateError) {
           throw new Error(Object.values(validateError).join(","));
@@ -141,9 +146,18 @@ export const transactionResolvers = {
         const transaction = await prisma.transaction.findUnique({
           where: { id: String(id), deletedAt: { isSet: false } },
         });
+
         if (!transaction) {
           throw new Error("Transaction not found");
+        } else if (
+          authorizedUser.id !== transaction.userId &&
+          authorizedUser.role.name !== "superadmin"
+        ) {
+          throw new Error(
+            "You do not have permission to update this transaction"
+          );
         }
+
         await prisma.transaction.update({
           where: { id: String(id) },
           data: args,
@@ -165,8 +179,14 @@ export const transactionResolvers = {
         const transaction = await prisma.transaction.findUnique({
           where: { id: String(id), deletedAt: { isSet: false } },
         });
+
         if (!transaction) {
           throw new Error("Transaction not found");
+        } else if (
+          authorizedUser.id !== transaction.userId &&
+          authorizedUser.role.name !== "superadmin"
+        ) {
+          throw new Error("Can not delete others transaction");
         }
         await prisma.transaction.update({
           where: { id: String(id) },

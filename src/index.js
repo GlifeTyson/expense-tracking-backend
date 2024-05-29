@@ -1,9 +1,11 @@
 import { userResolvers } from "./resolvers/userResolver.js";
 import { transactionResolvers } from "./resolvers/transactionResolver.js";
+import { roleResolvers } from "./resolvers/roleResolver.js";
 
 import { userTypeDefs } from "./schema/userSchema.js";
 import { transactionTypeDefs } from "./schema/transactionSchema.js";
 import { scalarTypeDefs } from "./schema/scalar.js";
+import { roleTypeDefs } from "./schema/roleSchema.js";
 
 import { mergeResolvers, mergeTypeDefs } from "@graphql-tools/merge";
 import helmet from "helmet";
@@ -16,20 +18,20 @@ import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHt
 import http from "http";
 import { prisma } from "./connectDb/db.js";
 import jwt from "jsonwebtoken";
-// import { Request } from "express";
-
-// interface AuthenticatedRequest extends Request {
-//   user?: { id: string };
-// }
 
 const start = async () => {
   const typeDefs = mergeTypeDefs([
     userTypeDefs,
     transactionTypeDefs,
     scalarTypeDefs,
+    roleTypeDefs,
   ]);
 
-  const resolvers = mergeResolvers([userResolvers, transactionResolvers]);
+  const resolvers = mergeResolvers([
+    userResolvers,
+    transactionResolvers,
+    roleResolvers,
+  ]);
 
   const PORT = process.env.PORT || 8080;
   const SECRET1 = process.env.SECRET1;
@@ -85,7 +87,10 @@ const start = async () => {
       context: async ({ req }) => {
         const { id } = req.user || {};
         let authorizedUser = id
-          ? await prisma.user.findUnique({ where: { id: String(id) } })
+          ? await prisma.user.findUnique({
+              where: { id: String(id) },
+              include: { role: true },
+            })
           : undefined;
         if (!authorizedUser) {
           authorizedUser = undefined;

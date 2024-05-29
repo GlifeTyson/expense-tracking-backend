@@ -18,6 +18,10 @@ export const transactionTypeDefs = gql`
   enum TransactionOrder {
     createdAt_DESC
     createdAt_ASC
+    amount_DESC
+    amount_ASC
+    date_DESC
+    date_ASC
   }
   type CategoryStatistics {
     category: String!
@@ -32,7 +36,12 @@ export const transactionTypeDefs = gql`
       include: String
     ): [Transaction!]
     transaction(id: ID!): Transaction
-    myTransactions: [Transaction!]
+    myTransactions(
+      filter: FilterTransaction
+      first: Int
+      skip: Int
+      orderBy: TransactionOrder
+    ): [Transaction!]
     categoryStatistics: [CategoryStatistics!]
   }
   input FilterTransaction {
@@ -60,6 +69,6 @@ export const transactionTypeDefs = gql`
   type Mutation {
     createTransaction(input: NewTransactionInput!): CommonResponse
     updateTransaction(id: ID!, input: UpdateTransactionInput!): CommonResponse
-    deleteTransaction(id: String!): CommonResponse
+    deleteTransaction(id: ID!): CommonResponse
   }
 `;
