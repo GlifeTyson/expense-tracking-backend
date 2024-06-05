@@ -3,6 +3,7 @@ import { validateUserInput } from "../validator/userValidator.js";
 import { comparePassword, createTokens, hashPassword } from "../utils/auth.js";
 import buildMongoFilters from "../utils/buildMongoFilters.js";
 import buildMongoOrders from "../utils/buildMongoOrders.js";
+import { io } from "../config/websocket.js";
 
 export const userResolvers = {
   Query: {
@@ -34,6 +35,12 @@ export const userResolvers = {
           orderBy: ordersBy,
           include: include ? includeItem : {},
         });
+
+        // for (const [key, value] of Object.entries(obj)) {
+        //   obj[key].role = value.role.name;
+        // }
+        // console.log(obj);
+
         return obj;
       } catch (error) {
         throw new Error(error);
@@ -109,7 +116,12 @@ export const userResolvers = {
             roleId: roleFound.id,
           },
         });
-
+        const newUserCreated = await prisma.user.findUnique({
+          where: {
+            id: newUser.id,
+          },
+        });
+        io.emit("user-update", { type: "create", user: newUserCreated });
         return {
           success: true,
           user: newUser,
@@ -215,7 +227,8 @@ export const userResolvers = {
         // check if id is exist
         const userFound = await prisma.user.findUnique({
           where: {
-            id: String(id),
+            id: id,
+            deletedAt: { isSet: false },
           },
         });
         if (!userFound) {
@@ -223,15 +236,17 @@ export const userResolvers = {
         }
         await prisma.user.update({
           where: {
-            id: String(id),
+            id: id,
           },
           data: {
             deletedAt: new Date(),
           },
         });
+        io.emit("user-update", { type: "delete", userId: userFound.id });
         return {
           success: true,
           message: "User Deleted Successfully",
+          errors: null,
         };
       } catch (error) {
         throw new Error(error);

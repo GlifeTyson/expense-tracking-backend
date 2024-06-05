@@ -18,6 +18,12 @@ import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHt
 import http from "http";
 import { prisma } from "./connectDb/db.js";
 import jwt from "jsonwebtoken";
+import { app, httpServer } from "./config/websocket.js";
+
+/*set up socket.io */
+// import path from "path";
+// import { fileURLToPath } from "url";
+// import { Server } from "socket.io";
 
 const start = async () => {
   const typeDefs = mergeTypeDefs([
@@ -36,8 +42,8 @@ const start = async () => {
   const PORT = process.env.PORT || 8080;
   const SECRET1 = process.env.SECRET1;
 
-  const app = express();
-  const httpServer = http.createServer(app);
+  // const app = express();
+  // const httpServer = http.createServer(app);
 
   app.use(
     helmet({
@@ -99,6 +105,26 @@ const start = async () => {
       },
     })
   );
+  /*set up socket.io*/
+
+  // const __filename = fileURLToPath(import.meta.url);
+  // const __dirname = path.dirname(__filename);
+  // const io = new Server(httpServer, {
+  //   cors: {
+  //     origin: "*",
+  //   },
+  // });
+  // io.on("connection", (socket) => {
+  //   console.log("a user connected");
+  //   socket.on("on-chat", (data) => {
+  //     console.log({ data });
+  //     io.emit("user-chat", data);
+  //   });
+  // });
+
+  // app.get("/", (req, res) => {
+  //   res.sendFile((__dirname, "/Users/macins/Desktop/gap-gql/src/index.html"));
+  // });
 
   httpServer.listen(PORT, () => {
     console.log(
